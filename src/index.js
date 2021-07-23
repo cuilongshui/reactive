@@ -1,12 +1,29 @@
-let x;
-let y;
 let active;
-let f = n => n * 100 + 100;
-let onXChange = function (cb) {
+let watch = function (cb) {
     active = cb;
     active()
     active = null;
 };
+//  队列
+let queue = [];
+let nexTick = (cb) => Promise.resolve().then(cb)
+
+//  队列添加任务
+let queueJob = job => {
+    if (!queue.includes(job)) {
+        queue.push(job)
+        nexTick(flushJobs)
+    }
+}
+
+//  执行队列任务
+let flushJobs = () => {
+    let job;
+    while ((job = queue.shift()) !== undefined) {
+        job()
+    }
+}
+
 
 //  依赖收集
 class Dep {
@@ -21,7 +38,7 @@ class Dep {
 
     // 执行依赖收集的方法
     notify() {
-        this.deps.forEach(dep => dep());
+        this.deps.forEach(dep => queueJob(dep));
     }
 }
 
@@ -40,13 +57,19 @@ let ref = initValue => {
     })
 }
 
-x = ref(1)
+let x = ref(1)
+let y = ref(2)
+let z = ref(3)
 
-onXChange(() => {
-    y = f(x.value)
-    console.log(y);
+watch(() => {
+    let tpl = `hello ${x.value} ${y.value} ${z.value} ...`
+    console.log(tpl)
+    document.write(tpl);
 })
 
 x.value = 2;
-x.value = 3;
+y.value = 2;
+z.value = 2;
+
+
 
